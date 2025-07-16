@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -18,17 +19,17 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 
-fun sendPositionOverWebSocket(signalRToken: String, jsonString: String):String {
-
-
-
+fun sendPositionOverWebSocket(context:Context, jsonString: String): String {
 
     val client = OkHttpClient()
-
-
+    val sharedPref = context.getSharedPreferences("WSSignalSettings", Context.MODE_PRIVATE)
+    val ip = sharedPref.getString("signalK_ip", "") ?: "192.168.x.x"
+    val port = sharedPref.getString("signalK_port", "") ?: "xxxx"
+    val signalKToken = sharedPref.getString("signalK_token", "") ?: ""
+var url="ws://$ip:$port/signalk/v1/stream"
     val request = Request.Builder()
-        .url("ws://192.168.86.31:3000/signalk/v1/stream")
-        .addHeader("Authorization", "Bearer $signalRToken")
+        .url(url)
+        .addHeader("Authorization", "Bearer $signalKToken")
         .build()
 
     val listener = object : WebSocketListener() {
@@ -56,6 +57,6 @@ fun sendPositionOverWebSocket(signalRToken: String, jsonString: String):String {
 
     // Viktigt! Stänger inte klienten, så att den kan skicka färdigt
     client.dispatcher.executorService.shutdown()
-return ""
+    return ""
 }
 

@@ -1,10 +1,11 @@
 package wavescout.signalapp
+import android.content.Context
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
-suspend fun sendLocationToServer(signalRToken: String, latitude: Double, longitude: Double):String {
+suspend fun sendLocationToServer(context: Context, latitude: Double, longitude: Double):String {
     return withContext(Dispatchers.IO) {
 
         val updateData = SignalKUpdate(
@@ -26,6 +27,6 @@ suspend fun sendLocationToServer(signalRToken: String, latitude: Double, longitu
         )
         val gson = Gson()
         val json = gson.toJson(updateData)
-        sendPositionOverWebSocket(signalRToken, json)
+        sendPositionOverWebSocket(context,  json)
     }
 }
