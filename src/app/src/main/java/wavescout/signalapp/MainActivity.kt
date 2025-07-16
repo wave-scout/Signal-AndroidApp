@@ -47,7 +47,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import okhttp3.internal.wait
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class MainActivity : ComponentActivity() {
@@ -124,10 +123,11 @@ fun GPSLocationDisplay(modifier: Modifier = Modifier) {
     var isTracking by remember { mutableStateOf(false) }
     val sharedPref = context.getSharedPreferences("WSSignalSettings", Context.MODE_PRIVATE)
     var signalKToken = sharedPref.getString("signalK_token", "") ?: ""
-    if (signalKToken == "") {
+    if(signalKToken=="")
+    {
         //get a token
         // save token
-        with(sharedPref.edit()) {
+        with (sharedPref.edit()) {
             putString("signalK_token", "token here")
             apply()
         }
@@ -138,8 +138,8 @@ fun GPSLocationDisplay(modifier: Modifier = Modifier) {
     LaunchedEffect(isTracking) {
         if (!isTracking) return@LaunchedEffect
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        var oldLat = 0.0
-        var oldLong = 0.0
+var oldLat=0.0
+        var oldLong=0.0
         // Run forever as long as the composable is active
         while (true) {
             val gpsPosition = GetGpsPosition(context, fusedLocationClient)
@@ -148,18 +148,20 @@ fun GPSLocationDisplay(modifier: Modifier = Modifier) {
 
             } else {
                 locationText = "Lat: ${gpsPosition.latitude}, Lon: ${gpsPosition.longitude}"
-                if (oldLat != gpsPosition.latitude || oldLong != gpsPosition.longitude) {
-                    oldLat = gpsPosition.latitude
-                    oldLong = gpsPosition.longitude
+                if(oldLat!=gpsPosition.latitude || oldLong!=gpsPosition.longitude)
+                {
+                    oldLat=gpsPosition.latitude
+                    oldLong=gpsPosition.longitude
                     // Send to server
                     var serverResponse =
                         sendLocationToServer(context, gpsPosition.latitude, gpsPosition.longitude)
                     if (serverResponse != "") {
                         locationText = serverResponse
                     }
-                } else {
-                    locationText =
-                        "Lat: ${gpsPosition.latitude}, Lon: ${gpsPosition.longitude} : No change!"
+                }
+                else
+                {
+                    locationText = "Lat: ${gpsPosition.latitude}, Lon: ${gpsPosition.longitude} : No change!"
                 }
 
             }
