@@ -128,7 +128,7 @@ fun SettingsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = {
                 coroutineScope.launch {
-                    var resultAccessRequest = SendSignalKAccessRequest(context)
+                    val resultAccessRequest = SendSignalKAccessRequest(context)
                     if(resultAccessRequest=="")
                     {
                         statusText="Requested!"
@@ -147,7 +147,7 @@ fun SettingsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = {
                 coroutineScope.launch {
-                    var resultAccessRequest = CheckSignalKAccessRequest(context)
+                    val resultAccessRequest = CheckSignalKAccessRequest(context)
                     statusText=resultAccessRequest.toString()
                 }
             })
@@ -155,6 +155,14 @@ fun SettingsScreen(navController: NavController) {
                 Text(text = "Check access token")
             }
         }
+        // Versionsnummer längst ner till höger
+        Text(
+            text = "v.1.0.0",
+            color = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
     }
 }
 
