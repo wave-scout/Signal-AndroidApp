@@ -26,18 +26,21 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.text.font.FontWeight
+import kotlinx.coroutines.launch
 
 //@Preview(showBackground = true)
 @Composable
 fun SettingsScreen(navController: NavController) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
-
+    val coroutineScope = rememberCoroutineScope()
     val sharedPref = context.getSharedPreferences("WSSignalSettings", Context.MODE_PRIVATE)
     val ip = sharedPref.getString("signalK_ip", "") ?: "192.168.x.x"
     val port = sharedPref.getString("signalK_port", "") ?: "xxxx"
+    val signalKToken = sharedPref.getString("signalK_token", "No signal-K token!") ?: "No signal-K token!"
     var SignalKipAddress by remember { mutableStateOf(ip) }
     var SignalKPort by remember { mutableStateOf(port) }
+    var tokenStatus by remember { mutableStateOf(signalKToken) }
 
     Box(
         modifier = Modifier
@@ -117,6 +120,40 @@ fun SettingsScreen(navController: NavController) {
                 text = statusText,
                 color = Color.White
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = tokenStatus,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = {
+                coroutineScope.launch {
+                    var resultAccessRequest = SendSignalKAccessRequest(context)
+                    if(resultAccessRequest=="")
+                    {
+                        statusText="Requested!"
+                    }
+                    else
+                    {
+                        statusText=resultAccessRequest.toString()
+                    }
+                }
+
+
+
+            }) {
+                Text("Send request")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = {
+                coroutineScope.launch {
+                    var resultAccessRequest = CheckSignalKAccessRequest(context)
+                    statusText=resultAccessRequest.toString()
+                }
+            })
+            {
+                Text(text = "Check access token")
+            }
         }
     }
 }
