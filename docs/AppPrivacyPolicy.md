@@ -59,7 +59,7 @@ At any time, you may:
 
 If you have any questions about this privacy policy, feel free to contact:
 
-**Daniel Berg**  
+**Dantiberg**  
 📧 Email: _[drb2281@gmail.com]_
 
 ---
