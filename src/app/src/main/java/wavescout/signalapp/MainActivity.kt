@@ -182,75 +182,7 @@ var oldLat=0.0
 }
 
 
-fun getSignalKAccess(): String? {
-    return try {
-        val loginUrl = URL("http://192.168.86.31:3000/signalk/v1/access/requests")
-        val connection = loginUrl.openConnection() as HttpURLConnection
 
-        connection.requestMethod = "POST"
-        connection.setRequestProperty("Content-Type", "application/json")
-        connection.doOutput = true
-
-        // Skicka login-data som JSON
-        val json = """
-            {
-              "clientId": "WaveScoutSignalClient",
-              "description": "Wave scout signal client"
-            }
-        """.trimIndent()
-
-        val writer = OutputStreamWriter(connection.outputStream)
-        writer.write(json)
-        writer.flush()
-        writer.close()
-
-        val responseCode = connection.responseCode
-
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            val stream = connection.inputStream.bufferedReader().readText()
-            val gson = Gson()
-            val loginResponse = gson.fromJson(stream, AccessResponse::class.java)
-            loginResponse.requestId
-        } else {
-            println("Login failed: HTTP $responseCode")
-            null
-        }
-
-    } catch (e: Exception) {
-        println("Login error: ${e.message}")
-        null
-    }
-}
-
-fun getSignalKToken(): String? {
-    return try {
-        var id = getSignalKAccess()
-
-        val loginUrl = URL("http://192.168.86.31:3000/signalk/v1/requests/" + id)
-        val connection = loginUrl.openConnection() as HttpURLConnection
-
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Content-Type", "application/json")
-        connection.doOutput = true
-
-
-        val responseCode = connection.responseCode
-
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            val stream = connection.inputStream.bufferedReader().readText()
-            val gson = Gson()
-            val loginResponse = gson.fromJson(stream, AccessResponse::class.java)
-            loginResponse.requestId
-        } else {
-            println("Login failed: HTTP $responseCode")
-            null
-        }
-
-    } catch (e: Exception) {
-        println("Login error: ${e.message}")
-        null
-    }
-}
 
 
 suspend fun saveSignalRToken(context: Context, signalRToken: String) {
@@ -270,7 +202,12 @@ fun MainScreenPreview() {
 data class AccessResponse(
     @SerializedName("state") val state: String,
     @SerializedName("requestId") val requestId: String,
+    @SerializedName("accessRequest") val accessRequest: AccessRequest?,
     @SerializedName("statusCode") val statusCode: Int,
     @SerializedName("href") val href: String,
     @SerializedName("ip") val ip: String,
+)
+data class AccessRequest(
+    @SerializedName("permission") val permission: String,
+    @SerializedName("token") val token: String
 )
