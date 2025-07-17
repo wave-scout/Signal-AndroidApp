@@ -29,15 +29,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.android.gms.location.LocationServices
-import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import wavescout.signalapp.datastore.TokenManager
 import wavescout.signalapp.ui.theme.SignalAppTheme
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -45,8 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import okhttp3.internal.wait
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 class MainActivity : ComponentActivity() {
@@ -122,7 +113,7 @@ fun GPSLocationDisplay(modifier: Modifier = Modifier) {
     var locationText by remember { mutableStateOf("Click to start sync gps") }
     var isTracking by remember { mutableStateOf(false) }
     val sharedPref = context.getSharedPreferences("WSSignalSettings", Context.MODE_PRIVATE)
-    var signalKToken = sharedPref.getString("signalK_token", "") ?: ""
+    val signalKToken = sharedPref.getString("signalK_token", "") ?: ""
     if(signalKToken=="")
     {
         //get a token
@@ -144,7 +135,7 @@ var oldLat=0.0
         while (true) {
             val gpsPosition = GetGpsPosition(context, fusedLocationClient)
             if (gpsPosition.error != "") {
-                locationText = gpsPosition.error;
+                locationText = gpsPosition.error
 
             } else {
                 locationText = "Lat: ${gpsPosition.latitude}, Lon: ${gpsPosition.longitude}"
@@ -153,7 +144,7 @@ var oldLat=0.0
                     oldLat=gpsPosition.latitude
                     oldLong=gpsPosition.longitude
                     // Send to server
-                    var serverResponse =
+                    val serverResponse =
                         sendLocationToServer(context, gpsPosition.latitude, gpsPosition.longitude)
                     if (serverResponse != "") {
                         locationText = serverResponse
@@ -170,25 +161,32 @@ var oldLat=0.0
             kotlinx.coroutines.delay(3_000L)
         }
     }
-    // Show the text and a start button
-    Column(modifier = modifier.padding(16.dp)) {
-        Text(text = locationText, color = Color.White)
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { isTracking = true }) {
-            Text("Start gps sync")
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        // Centralt innehåll
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(16.dp)
+        ) {
+            Text(text = locationText, color = Color.White)
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { isTracking = true }) {
+                Text("Start gps sync")
+            }
         }
-    }
 
-}
-
-
-
-
-
-suspend fun saveSignalRToken(context: Context, signalRToken: String) {
-    val key = stringPreferencesKey("signalRToken")
-    context.dataStore.edit { settings ->
-        settings[key] = signalRToken
+        // Versionsnummer längst ner till höger
+        Text(
+            text = "v.1.0.0",
+            color = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
     }
 }
 
