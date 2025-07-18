@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 
 //@Preview(showBackground = true)
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(version: String,navController: NavController) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val coroutineScope = rememberCoroutineScope()
@@ -157,7 +157,7 @@ fun SettingsScreen(navController: NavController) {
         }
         // Versionsnummer längst ner till höger
         Text(
-            text = "v.1.0.0",
+            text = "v$version",
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -170,5 +170,5 @@ fun SettingsScreen(navController: NavController) {
 @Composable
 fun SettingsScreen() {
     val navController = rememberNavController()
-    SettingsScreen(navController = navController)
+    SettingsScreen("preview",navController = navController)
 }
