@@ -1,9 +1,14 @@
 package wavescout.signalapp
 
 import android.Manifest
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -61,16 +66,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val navController = rememberNavController()
+            val version="1.0.2"
             NavHost(navController, startDestination = "main") {
-                composable("main") { MainScreen(navController) }
-                composable("settings") { SettingsScreen(navController) }
+                composable("main") { MainScreen(version,navController) }
+                composable("settings") { SettingsScreen(version, navController) }
             }
         }
     }
 }
 
 @Composable
-fun MainScreen(navController: NavHostController) {
+fun MainScreen(version: String,navController: NavHostController) {
     SignalAppTheme {
         Scaffold(
             containerColor = Color.Black
@@ -82,7 +88,7 @@ fun MainScreen(navController: NavHostController) {
                     .background(Color.Black)
             ) {
                 // GPS display in the center or background
-                GPSLocationDisplay(
+                GPSLocationDisplay(version,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = 48.dp)
@@ -107,81 +113,72 @@ fun MainScreen(navController: NavHostController) {
 }
 
 @Composable
-fun GPSLocationDisplay(modifier: Modifier = Modifier) {
-
+fun GPSLocationDisplay(version: String,modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var locationText by remember { mutableStateOf("Click to start sync gps") }
-    var isTracking by remember { mutableStateOf(false) }
+
+    // Read saved Signal K token
     val sharedPref = context.getSharedPreferences("WSSignalSettings", Context.MODE_PRIVATE)
     val signalKToken = sharedPref.getString("signalK_token", "") ?: ""
-    if(signalKToken=="")
-    {
-        //get a token
-        // save token
-        with (sharedPref.edit()) {
-            putString("signalK_token", "token here")
-            apply()
-        }
-    }
 
 
 
-    LaunchedEffect(isTracking) {
-        if (!isTracking) return@LaunchedEffect
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-var oldLat=0.0
-        var oldLong=0.0
-        // Run forever as long as the composable is active
-        while (true) {
-            val gpsPosition = GetGpsPosition(context, fusedLocationClient)
-            if (gpsPosition.error != "") {
-                locationText = gpsPosition.error
-
-            } else {
-                locationText = "Lat: ${gpsPosition.latitude}, Lon: ${gpsPosition.longitude}"
-                if(oldLat!=gpsPosition.latitude || oldLong!=gpsPosition.longitude)
-                {
-                    oldLat=gpsPosition.latitude
-                    oldLong=gpsPosition.longitude
-                    // Send to server
-                    val serverResponse =
-                        sendLocationToServer(context, gpsPosition.latitude, gpsPosition.longitude)
-                    if (serverResponse != "") {
-                        locationText = serverResponse
-                    }
+    // Register BroadcastReceiver to listen for GPS updates from service
+    DisposableEffect(Unit) {
+        Log.d("GPSReceiver", "Registering receiver")
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                val message = intent?.getStringExtra("location_text")
+                Log.d("GPSReceiver", "Received broadcast with text: $message")
+                if (message != null) {
+                    locationText = message
                 }
-                else
-                {
-                    locationText = "Lat: ${gpsPosition.latitude}, Lon: ${gpsPosition.longitude} : No change!"
-                }
-
             }
+        }
 
-            // wait 30 000 ms (30 s)
-            kotlinx.coroutines.delay(3_000L)
+        val filter = IntentFilter("GPS_UPDATE")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+
+        onDispose {
+            context.unregisterReceiver(receiver)
         }
     }
+
+    // UI layout
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Centralt innehåll
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = locationText, color = Color.White)
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { isTracking = true }) {
+            Button(onClick = {
+                // Start the GPS tracking service
+                val intent = Intent(context, GpsTrackingService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            }) {
                 Text("Start gps sync")
             }
         }
 
-        // Versionsnummer längst ner till höger
+        // App version in bottom-right corner
         Text(
-            text = "v.1.0.0",
+            text = "v$version",
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -194,7 +191,7 @@ var oldLat=0.0
 @Composable
 fun MainScreenPreview() {
     val navController = rememberNavController()
-    MainScreen(navController = navController)
+    MainScreen("preview",navController = navController)
 }
 
 data class AccessResponse(
